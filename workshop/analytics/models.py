@@ -1,48 +1,31 @@
 from django.db import models
-from django_countries.fields import CountryField
 
 # Create your models here.
 
 MAX_CHAR_LENGTH = 100
 
 
-class Workshop(models.Model):
+class Track(models.Model):
 
-    name = models.CharField(max_length=MAX_CHAR_LENGTH, db_column="Name", null=True)
-    start_date = models.DateField(db_column="Start_Date", null=True)
-    end_date = models.DateField(db_column="End_Date", null=True)
-    venue = models.CharField(max_length=MAX_CHAR_LENGTH, db_column="Venue", null=True)
-   
+    name = models.CharField(max_length=MAX_CHAR_LENGTH, db_column="Name",
+                            null=False)
+
     def __str__(self):
         return self.name
 
 
 class Sponsor(models.Model):
-    name = models.CharField(max_length=MAX_CHAR_LENGTH)
-    workshop_sponsored = models.ForeignKey(Workshop, on_delete=models.CASCADE,
-                                           db_column="Workshop_Sponsored")
+    name = models.CharField(max_length=MAX_CHAR_LENGTH, db_column="Name",
+                            null=False)
+
+    # url = models.CharField(max_length=MAX_CHAR_LENGTH, db_column="URL",
+    #                        null=True)
+    # workshop_sponsored = models.ForeignKey(Workshop,
+    #                                        on_delete=models.CASCADE,
+    #                                        db_column="Workshop_Sponsored")
 
     def __str__(self):
         return self.name
-
-
-class Track(models.Model):
-    track_title = models.CharField(max_length=MAX_CHAR_LENGTH,
-                                   db_column="Track_Title")
-    associated_workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE,
-                                            db_column="Associated_Workshop")
-
-    def __str__(self):
-        return self.track_title
-
-
-class Institution(models.Model):
-    institution_name = models.CharField(max_length=MAX_CHAR_LENGTH,
-                                   db_column="Institution_name", null=True)
-    location = models.CharField(max_length=MAX_CHAR_LENGTH,
-                                   db_column="Location", null=True)
-    def __str__(self):
-        return self.institution_name
 
 
 class Person(models.Model):
@@ -52,36 +35,63 @@ class Person(models.Model):
     )
 
     first_name = models.CharField(max_length=MAX_CHAR_LENGTH,
-                                  db_column="First_Name",default='')
+                                  db_column="First_Name", null=False)
     last_name = models.CharField(max_length=MAX_CHAR_LENGTH,
-                                 db_column="Last_Name",default='')
-    email = models.EmailField(db_column="Email_Address",default='')
-    institution = models.ForeignKey(Institution, on_delete=models.CASCADE,
-                                         db_column="Institution",default='')
+                                 db_column="Last_Name", null=False)
+    email = models.EmailField(db_column="Email_Address", null=False)
+    institution = models.CharField(max_length=MAX_CHAR_LENGTH,
+                                   db_column="Institution", null=True)
     gender = models.CharField(max_length=1, db_column="Gender",
-                              choices=GENDER_CHOICES,default='')
-    country = CountryField(blank_label='select country', db_column="Country")
-    
-    def __str__(self):
-        return self.first_name
-
-
-class Attendee(Person):
-    workshop_attended = models.ForeignKey(Workshop, on_delete=models.CASCADE,
-                                          db_column="Workshop_Attended")
+                              choices=GENDER_CHOICES, null=True,
+                              default='X')
+    country = models.CharField(max_length=MAX_CHAR_LENGTH, db_column="Country",
+                           null=True, default='UNSPECIFIED')
 
     def __str__(self):
-        return self.first_name
+        fname = str(self.first_name)
+        lname = str(self.last_name)
+        email = str(self.email)
+        return fname + " " + lname + " <" + email + ">"
 
 
-class Instructor(Person):
-    workshop_affiliated = models.ForeignKey(Workshop, on_delete=models.CASCADE,
-                                            db_column="Workshop_Affiliated",default='')
-    track_they_teach = models.ForeignKey(Track, on_delete=models.CASCADE,
-                                         db_column="Track_They_Teach",default='')
+class Participant(Person):
+    # workshop_attended = models.ForeignKey(Workshop,
+    #                                       on_delete=models.CASCADE,
+    #                                       db_column="Workshop_Attended")
+    pass
+
+
+class Facilitator(Person):
+
+    # workshop_taught = models.ForeignKey(Workshop,
+    #                                     on_delete=models.CASCADE,
+    #                                     db_column="Workshop_Taught")
+    pass
+
+
+class Workshop(models.Model):
+
+    name = models.CharField(max_length=MAX_CHAR_LENGTH, db_column="Name",
+                            null=False)
+    start_date = models.DateField(db_column="Start_Date", null=False)
+    end_date = models.DateField(db_column="End_Date", null=False)
+    venue = models.CharField(max_length=MAX_CHAR_LENGTH, db_column="Venue",
+                             null=False)
+    host = models.CharField(max_length=MAX_CHAR_LENGTH, db_column="Host",
+                            null=True)
+
+    track = models.ForeignKey(Track, on_delete=models.CASCADE,
+                              db_column="Track")
+
+    # To implement mapping tables
+    facilitators = models.ManyToManyField(Facilitator,
+                                          related_name="facilitated",
+                                          db_table="workshop_facilitator_map")
+    participants = models.ManyToManyField(Participant,
+                                          related_name="attended",
+                                          db_table="workshop_participant_map")
+    sponsors = models.ManyToManyField(Sponsor, related_name="sponsored",
+                                      db_table="workshop_sponsor_map")
 
     def __str__(self):
-        return self.first_name
-
-
-
+        return self.name

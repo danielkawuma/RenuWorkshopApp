@@ -1,0 +1,54 @@
+{% extends 'admin/change_list.html' %}
+{% load static %}
+{% block extrahead %}
+  <script type="text/javascript"
+          src="https://www.gstatic.com/charts/loader.js">
+  </script>
+  <script type="text/javascript">
+    google.charts.load('current', {'packages': ['corechart']});
+
+    graph_width = 600
+    graph_height = 400
+
+    {% regroup cl.queryset|dictsort:"gender" by get_gender_display as gender_list %}
+    //Gender chart
+    google.charts.setOnLoadCallback(drawGenderChart);
+
+    function drawGenderChart() {
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('string', 'Gender');
+      data.addColumn('number', 'Number of attendees');
+
+      data.addRows([{% for gender in gender_list %}
+        [ '{{ gender.grouper }}', {{ gender.list|length }} ], {% endfor %}
+      ]);
+
+      var options = {
+        title: 'Gender distribution',
+        width: graph_width,
+        height: graph_height
+      };
+
+      var genderChart = new google.visualization.PieChart(
+        document.getElementById("gender-chart")
+      );
+      genderChart.draw(data, options);
+    };
+
+  </script>
+{% endblock %}
+{% block content %}
+    <!--Table and divs that hold the pie charts-->
+    <table class="columns">
+      <tr>
+        <td><div id="gender-chart" style="border: 1px solid #ccc"></div></td>
+      </tr>
+    </table>
+    {{ block.super }}
+{% endblock %}
+{% block object-tools %}
+    <a href="import-csv/">Import CSV</a>
+    <br />
+    {{ block.super }}
+{% endblock %}
